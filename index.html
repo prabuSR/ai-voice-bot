@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Voice Bot</title>
+</head>
+<body>
+
+<h2>AI Voice Assistant</h2>
+
+<button onclick="startListening()">Speak</button>
+<button onclick="stopListening()">Stop</button>
+<button onclick="resetChat()">New Chat</button>
+
+<p id="userText"></p>
+<p id="botReply"></p>
+
+<script>
+const apiUrl = "http://localhost:8001/chat";
+
+let recognition;
+let isListening = false;
+
+function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Speech Recognition not supported");
+        return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+
+    recognition.onstart = function() {
+        isListening = true;
+        console.log("Listening...");
+    };
+
+    recognition.onresult = function(event) {
+        const text = event.results[event.results.length - 1][0].transcript;
+        document.getElementById("userText").innerText = "You: " + text;
+
+        sendToAPI(text);
+    };
+
+    recognition.onerror = function(event) {
+        console.log("Error:", event.error);
+    };
+
+    recognition.start();
+}
+
+function stopListening() {
+    if (recognition && isListening) {
+        recognition.stop();
+        isListening = false;
+        console.log("Stopped listening");
+    }
+
+    // stop voice also
+    speechSynthesis.cancel();
+}
+
+function resetChat() {
+    document.getElementById("userText").innerText = "";
+    document.getElementById("botReply").innerText = "";
+
+    // stop everything
+    if (recognition) recognition.stop();
+    speechSynthesis.cancel();
+
+    console.log("Chat reset");
+}
+
+function sendToAPI(message) {
+    fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("botReply").innerText = "Bot: " + data.reply;
+
+        speechSynthesis.cancel();
+
+        setTimeout(() => {
+            const speech = new SpeechSynthesisUtterance(data.reply);
+            speechSynthesis.speak(speech);
+        }, 200);
+    });
+}
+</script>
+
+</body>
+</html>

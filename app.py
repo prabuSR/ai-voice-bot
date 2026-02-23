@@ -11,7 +11,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-API_KEY = "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"
+API_KEY = "YOUR API KEY"
 
 class Message(BaseModel):
     message: str
